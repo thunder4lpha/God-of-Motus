@@ -9,4 +9,4 @@ Lancez le fichier *requirements.txt* avec la commande *pip install -r requiremen
 Lancez le programme en dans un délai de 1 seconde mettre visible à l'écran la page du Motus à échelle 100%. Car le bot fonctionne en détectant des éléments sur votre écran.
 
 **Arrêt :**
-Lancez la touche *échap* enfoncée.
+Laissez la touche *échap* enfoncée pendant environ 2-3 secondes.
