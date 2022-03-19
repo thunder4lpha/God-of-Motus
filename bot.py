@@ -1,14 +1,9 @@
-from threading import activeCount
+from tkinter import N
 import cv2
 import numpy as np
 import pyautogui as pg
 from time import sleep
 from random import randint
-
-import requests as req
-from bs4 import BeautifulSoup
-
-#! L'ALGORITHME PEUT ENCORE ETRE AFFINE
 
 case_size = 52
 
@@ -33,9 +28,9 @@ def check(origin, step):
         case = (case[0]+case_size, case[1])
     return o
 
-def choose_word(gletters, wletters, bletters, wordlist):
+def choose_word(gletters, wletters, bletters, words):
     sub_dict = []
-    dict = wordlist[:]
+    dict = words[:]
     
     # Recherche des mots contenants au moins une bonne lettre
     for letter in "".join(list(set(wletters+gletters))):
@@ -71,14 +66,10 @@ def choose_word(gletters, wletters, bletters, wordlist):
             sub_dict.append(word)
 
     dict = list(set(sub_dict))
-
-    if len(dict) == 0:
-        return "NA"
-
-    answer = dict.pop(randint(0, len(dict)-1))
-    print("###########")
-    print(answer + " parmis " + str(len(dict)+1))
-    print("###########")
+    try:
+        answer = dict.pop(randint(0, len(dict)-1))
+    except:
+        return "NO"
     return answer, dict
 
 def submit_word(word):
@@ -90,6 +81,9 @@ def submit_word(word):
     pg.press("enter")
 
 sleep(1)
+nb_words = 0
+nb_loose = 0
+nb_win = 0
 
 # Boucle principal
 while True:
@@ -97,6 +91,12 @@ while True:
     # (RE)LANCEMENT DE LA PARTIE
     pg.moveTo(pg.locateOnScreen("calibrage.png", confidence=0.9))
     pg.leftClick()
+
+    nb_words += 1
+    print("###################################")
+    print("PARTIES JOUÉES : " + str(nb_words))
+    print("PARTIES GAGNÉES : " + str(nb_win))
+    print("PARTIES PERDUES : " + str(nb_loose))
 
     sleep(1)
 
@@ -117,8 +117,6 @@ while True:
 
     word = answer[:]
 
-    sleep(0.5)
-
     #################################################################################
     #################################################################################
     #################################################################################
@@ -137,10 +135,10 @@ while True:
 
         # Vérification de l'état du jeu
         if check(origin, 7) == [2 for _ in range(8)]:
-            print("MOT TROUVÉ !")
+            nb_win += 1
             break
         elif check(origin, 7) == [0 for _ in range(8)]:
-            print("PERDU !")
+            nb_loose += 1
             break
 
         # Analyse des résultats
@@ -148,19 +146,19 @@ while True:
         wletters = ['' for _ in 8*'_']
 
         for i in range(8):
-
             if errors[i] == 2: gletters[i] = word[i]
             elif errors[i] == 1: wletters[i] = word[i]
             elif not word[i] in wletters and not word[i] in gletters: bletters += word[i]
 
         # Tri de la liste des lettres bannies
+        bletters = "".join(list(set(bletters)))
         for l in "".join(list(set(gletters+wletters))):
             bletters = bletters.replace(l, "")
 
         # Recherche d'une solution
         answer, dict = choose_word(gletters, wletters, bletters, dict)
-        if answer == "NA":
-            print("PERDU !")
+        if answer == "NO":
+            nb_loose += 1
             break
         # Écriture de la solution
         submit_word(answer)
@@ -169,6 +167,7 @@ while True:
 
         # Prise d'un screen
         screen = pg.screenshot()
+
         screen = cv2.cvtColor(np.array(screen), cv2.COLOR_BGR2RGB)
         origin = calibrate()
         # Vérification de la validité du mot
