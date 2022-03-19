@@ -3,6 +3,7 @@ import numpy as np
 import pyautogui as pg
 from time import sleep
 from random import randint
+import keyboard
 
 case_size = 52
 
@@ -173,3 +174,7 @@ while True:
         if check(origin, step+1)[0] == 2:
             word = answer[:]
             step += 1
+        
+        # Vérification de la fin du Jeu
+        if keyboard.is_pressed('escape'):
+            exit()
