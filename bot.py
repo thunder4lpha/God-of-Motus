@@ -6,6 +6,7 @@ from random import randint
 import keyboard
 
 case_size = 52
+precision = 0.85
 
 # Chargement du dictionnaire
 wordlist = []
@@ -15,7 +16,7 @@ with open("dict.txt", "r") as f:
 
 def calibrate():
     # Detection du repère
-    origin = pg.locateOnScreen("calibrage.png", confidence=0.9)
+    origin = pg.locateOnScreen("calibrage.png", confidence=precision)
     return origin 
 
 def check(origin, step): 
@@ -59,6 +60,7 @@ def choose_word(gletters, wletters, bletters, words):
             dict.append(word)
     dict = list(set(dict))
 
+
     # Tri des mots qui ont une lettre la où elle ne peut être
     sub_dict = []
     for word in dict:
@@ -69,44 +71,48 @@ def choose_word(gletters, wletters, bletters, words):
     try:
         answer = dict.pop(randint(0, len(dict)-1))
     except:
-        return "NO"
+        return "NO", dict
     return answer, dict
 
 def submit_word(word):
-    text_calib = pg.locateOnScreen("repere.png", confidence=0.9)
+    text_calib = pg.locateOnScreen("repere.png", confidence=precision)
 
     pg.moveTo(text_calib.left+172, text_calib.top+128)
     pg.leftClick()
     pg.write(word, 0.01)
     pg.press("enter")
 
-sleep(1)
+sleep(2)
 nb_words = 0
+nb_wins = 0
 nb_loose = 0
-nb_win = 0
 
 # Boucle principal
 while True:
 
     # (RE)LANCEMENT DE LA PARTIE
-    pg.moveTo(pg.locateOnScreen("calibrage.png", confidence=0.9))
+    pg.moveTo(pg.locateOnScreen("calibrage.png", confidence=precision))
     pg.leftClick()
 
     nb_words += 1
     print("###################################")
     print("PARTIES JOUÉES : " + str(nb_words))
-    print("PARTIES GAGNÉES : " + str(nb_win))
+    print("PARTIES GAGNÉES : " + str(nb_wins))
     print("PARTIES PERDUES : " + str(nb_loose))
 
-    sleep(1)
+    sleep(2)
 
     step = 0
     word = ""
     bletters = ""
 
+    # Calibrage
+    screen = pg.screenshot()
+    screen = cv2.cvtColor(np.array(screen), cv2.COLOR_BGR2RGB)
+    origin = calibrate()
+
     for i in range(97, 119):
-        screen = pg.screenshot()
-        if pg.locateOnScreen(f"lettres/{chr(i)}.png", confidence=0.98) != None:
+        if pg.locateOnScreen(f"lettres/{chr(i)}.png", confidence=0.95, grayscale=True, region=(origin.left-118, origin.top-412, 422, 375)) != None:
             first_letter = chr(i).upper()
             break
     
@@ -123,7 +129,7 @@ while True:
 
     # Boucle de résolution
     while True:
-        sleep(0.2)
+        sleep(0.5)
 
         # Calibrage
         screen = pg.screenshot()
@@ -135,10 +141,10 @@ while True:
 
         # Vérification de l'état du jeu
         if check(origin, 7) == [2 for _ in range(8)]:
-            nb_win += 1
+            nb_loose += 1
             break
         elif check(origin, 7) == [0 for _ in range(8)]:
-            nb_loose += 1
+            nb_wins += 1
             break
 
         # Analyse des résultats
@@ -158,7 +164,7 @@ while True:
         # Recherche d'une solution
         answer, dict = choose_word(gletters, wletters, bletters, dict)
         if answer == "NO":
-            nb_loose += 1
+            nb_wins += 1
             break
         # Écriture de la solution
         submit_word(answer)
